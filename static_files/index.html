@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--Import Google Icon Font-->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- Compiled and minified CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+  <!--Let browser know website is optimized for mobile-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+</head>
+
+<body>
+<h1>AutoComplete using Elastic Search.</h1>
+<div class="row">
+  <div class="col s12">
+    <div class="row">
+      <div class="input-field col s12">
+        <i class="material-icons prefix">textsms</i>
+        <input type="text" id="autocomplete-input" class="autocomplete">
+        <label for="autocomplete-input">Search for Recipe ...</label>
+      </div>
+    </div>
+  </div>
+</div>
+<button id="readButton">Get Recipe</button>
+<button id="allRecipesButton">Get all Recipes</button>
+
+<div id="jobDiv"></div>
+<img id="petImage" src="">
+
+<hr/>
+
+<div id="recipes"></div>
+<script type="text/javascript" src="./jquery-3.3.1.min.js"></script>
+<!-- Compiled and minified JavaScript -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+<script type="text/javascript">
+
+  $(document).ready(function(){
+
+    let xhr = null;
+
+    $('#autocomplete-input').keyup(() => {
+
+      const searchTerm = $('#autocomplete-input').val();
+      const requestURL = 'search/' + searchTerm;
+      console.log('make ajax request to:', requestURL);
+
+      //it will show results once the character entered is 4 or more.
+      if(searchTerm.length === 3){
+
+        //trying to kill previous ajax request
+        if( xhr != null ) {
+          xhr.abort();
+          xhr = null;
+        }
+
+        //performing ajax request
+        xhr = $.ajax({
+          url: requestURL,
+          type: 'GET',
+          dataType: 'json',
+          success: (result) => {
+            //updating materialize-css autocomplete data
+            $('input.autocomplete').autocomplete({
+              data: result,
+              minLength : 3
+            });
+            console.log('ajax success! ', result);
+          }
+        });
+      }
+    });
+
+    $('#readButton').click(() => {
+      const requestURL = 'search/' + $('#autocomplete-input').val();
+      console.log('make ajax request to:', requestURL);
+      $.ajax({
+        url: requestURL,
+        type: 'GET',
+        dataType: 'json',
+        success: (result) => {
+          $('input.autocomplete').autocomplete({
+            data: result,
+          });
+          console.log('ajax success! ', result);
+        }
+      });
+    });
+
+    $('#allRecipesButton').click(() => {
+      console.log('Button Clicked');
+      $.ajax({
+        url: 'all/',
+        type: 'GET',
+        dataType: 'json',
+        success: (data) => {
+          console.log('ajax success! ', data);
+          $('#recipes').html('All Users: ' + data);
+        }
+      });
+    });
+  });
+
+</script>
+</body>
+</html>
