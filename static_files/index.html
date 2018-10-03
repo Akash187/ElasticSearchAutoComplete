@@ -8,6 +8,12 @@
 
   <!--Let browser know website is optimized for mobile-->
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <style>
+    .autocomplete-content{
+      max-height: 200px;
+    }
+  </style>
 </head>
 
 <body>
@@ -23,15 +29,7 @@
     </div>
   </div>
 </div>
-<button id="readButton">Get Recipe</button>
-<button id="allRecipesButton">Get all Recipes</button>
 
-<div id="jobDiv"></div>
-<img id="petImage" src="">
-
-<hr/>
-
-<div id="recipes"></div>
 <script type="text/javascript" src="./jquery-3.3.1.min.js"></script>
 <!-- Compiled and minified JavaScript -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
@@ -71,35 +69,6 @@
           }
         });
       }
-    });
-
-    $('#readButton').click(() => {
-      const requestURL = 'search/' + $('#autocomplete-input').val();
-      console.log('make ajax request to:', requestURL);
-      $.ajax({
-        url: requestURL,
-        type: 'GET',
-        dataType: 'json',
-        success: (result) => {
-          $('input.autocomplete').autocomplete({
-            data: result,
-          });
-          console.log('ajax success! ', result);
-        }
-      });
-    });
-
-    $('#allRecipesButton').click(() => {
-      console.log('Button Clicked');
-      $.ajax({
-        url: 'all/',
-        type: 'GET',
-        dataType: 'json',
-        success: (data) => {
-          console.log('ajax success! ', data);
-          $('#recipes').html('All Users: ' + data);
-        }
-      });
     });
   });
 

@@ -61,34 +61,6 @@ stream.on('error', function(err){
   console.log(err);
 });
 
-app.get('/all', function(req, res) {
-  Recipe.find(function(err, allbooks, count) {
-    console.log(allbooks.length);
-    res.send(allbooks);
-  });
-});
-
-app.post('/recipe', (req, res) => {
-  let recipe = new Recipe({
-    name: req.body.name,
-    ingredients: req.body.ingredients,
-    url: req.body.url,
-    image: req.body.image,
-    cookTime: req.body.cookTime,
-    recipeYield: req.body.recipeYield,
-    prepTime: req.body.prepTime,
-    description: req.body.description
-  });
-  recipe.save().then((doc) => {
-    res.send(doc);
-    Recipe.synchronize();
-  }, (e) => {
-    res.status(400).send(e);
-  });
-}, (e) => {
-  console.log("Error in post /recipe");
-});
-
 app.get("/search/:term", function(req,res) {
   let val=req.params.term;
   let options = {};
