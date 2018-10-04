@@ -1,4 +1,4 @@
-# ElasticSearchAutoSearch
+# ElasticSearchAutoComplete
 This is a Simple autocomplete feature implementation of elasticsearch with mongodb as main database. I have used mongoostatic to index mongodb data to elasticsearch.
 ## Initial Setup
 1. Make sure mongodb is running at "localhost:27017".
