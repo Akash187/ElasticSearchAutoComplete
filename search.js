@@ -93,7 +93,6 @@ app.get("/filter/:term", function (req, res) {
       }
     })
   });
-  console.log(filter);
   let list = [];
   Recipe.esSearch(
     {

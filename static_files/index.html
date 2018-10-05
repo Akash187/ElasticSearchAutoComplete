@@ -125,9 +125,16 @@
     console.log(finalFilterString);
 
     if (searchTerm) {
+
       let xhr = null;
+
       $('#list').html('');
-      const requestURL = 'filter/' + searchTerm + "&" + finalFilterString;
+      let requestURL = '';
+      if(finalFilterString !== '') {
+        requestURL = 'filter/' + searchTerm + "&" + finalFilterString;
+      }else {
+        requestURL = 'filter/' + searchTerm;
+      }
       console.log('make ajax request to:', requestURL);
 
       //it will show results once the character entered is 4 or more.
