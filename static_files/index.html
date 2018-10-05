@@ -72,7 +72,7 @@
 <body>
 
 <h2>Search for Recipe and Filter according to Ingredients</h2>
-
+<button onclick="syncData()" style="margin: 10px">Sync Update to ElasticSearch</button>
 <div style="display: flex; flex-wrap: wrap; justify-content: space-around; align-items: center">
   <div class="autocomplete" style="width:500px;">
     <input id="myInput" type="text" name="myCountry" placeholder="Search Recipe">
@@ -106,6 +106,17 @@
 <script type="text/javascript">
   let searchTerm = '';
 
+  function syncData() {
+    $.ajax({
+      url: '/syncData',
+      type: 'GET',
+      dataType: 'json',
+      success: (result) => {
+        console.log(result);
+      }
+    });
+  }
+
   function filter() {
     let checkedNum = $('input[name="ingredient"]:checked').length;
     let favorite = [];
@@ -121,13 +132,9 @@
     });
 
     let finalFilterString = filterString.substring(0, filterString.length-1);
-
     console.log(finalFilterString);
-
     if (searchTerm) {
-
       let xhr = null;
-
       $('#list').html('');
       let requestURL = '';
       if(finalFilterString !== '') {

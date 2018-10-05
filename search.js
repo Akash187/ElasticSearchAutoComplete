@@ -63,6 +63,21 @@ stream.on('error', function (err) {
   console.log(err);
 });
 
+app.get("/syncData", function (req, res) {
+  let stream = Recipe.synchronize()
+    , count = 0;
+
+  stream.on('data', function (err, doc) {
+    count++;
+  });
+  stream.on('close', function () {
+    console.log('indexed ' + count + ' documents!');
+  });
+  stream.on('error', function (err) {
+    console.log(err);
+  });
+  res.send({result: "successfully indexed Mongo Data to ElasticSearch."});
+});
 
 app.get("/search/:term", function (req, res) {
   let val = req.params.term;
