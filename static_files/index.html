@@ -148,9 +148,7 @@
       if (searchTerm.length > 0) {
         //trying to kill previous ajax request
         if (xhr != null) {
-          console.log("abort ajax call");
           xhr.abort();
-          console.log("abort ajax call success");
           xhr = null;
         }
 
@@ -186,9 +184,7 @@
       if (searchTerm.length > 0) {
         //trying to kill previous ajax request
         if (xhr != null) {
-          console.log("abort ajax call");
           xhr.abort();
-          console.log("abort ajax call success");
           xhr = null;
         }
 
@@ -200,7 +196,8 @@
           success: (result) => {
 
             //uncomment below line to start autocomplete
-            // autocomplete(document.getElementById("myInput"), result);
+            let sortedArray = sortInputFirst(document.getElementById("myInput"), result);
+            autocomplete(document.getElementById("myInput"), sortedArray);
 
             result.map((each) => {
               $('#list').append(`<li>${each}</li>`);
@@ -211,14 +208,28 @@
     });
   });
 
+  function sortInputFirst(input, data) {
+    let first = [];
+    let others = [];
+    for (let i = 0; i < data.length; i++) {
+      if (data[i].indexOf(input) === 0) {
+        first.push(data[i]);
+      } else {
+        others.push(data[i]);
+      }
+    }
+    first.sort();
+    others.sort();
+    return(first.concat(others));
+  }
+
   function autocomplete(inp, arr) {
-    console.log(searchTerm);
     /*the autocomplete function takes two arguments,
     the text field element and an array of possible autocompleted values:*/
-    var currentFocus;
+    let currentFocus;
     /*execute a function when someone writes in the text field:*/
     inp.addEventListener("input", function (e) {
-      var a, b, i, val = this.value;
+      let a, b, i, val = this.value;
       /*close any already open lists of autocompleted values*/
       closeAllLists();
       if (!val) {
@@ -256,7 +267,7 @@
     });
     /*execute a function presses a key on the keyboard:*/
     inp.addEventListener("keydown", function (e) {
-      var x = document.getElementById(this.id + "autocomplete-list");
+      let x = document.getElementById(this.id + "autocomplete-list");
       if (x) x = x.getElementsByTagName("div");
       if (e.keyCode == 40) {
         /*If the arrow DOWN key is pressed,
@@ -293,7 +304,7 @@
 
     function removeActive(x) {
       /*a function to remove the "active" class from all autocomplete items:*/
-      for (var i = 0; i < x.length; i++) {
+      for (let i = 0; i < x.length; i++) {
         x[i].classList.remove("autocomplete-active");
       }
     }
@@ -301,8 +312,8 @@
     function closeAllLists(elmnt) {
       /*close all autocomplete lists in the document,
       except the one passed as an argument:*/
-      var x = document.getElementsByClassName("autocomplete-items");
-      for (var i = 0; i < x.length; i++) {
+      let x = document.getElementsByClassName("autocomplete-items");
+      for (let i = 0; i < x.length; i++) {
         if (elmnt != x[i] && elmnt != inp) {
           x[i].parentNode.removeChild(x[i]);
         }
