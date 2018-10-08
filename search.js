@@ -1,6 +1,7 @@
 let express = require('express');
 let bodyParser = require('body-parser');
 let mongoosastic = require("mongoosastic");
+let elasticsearch = require('elasticsearch');
 
 let app = express();
 app.use(express.static('static_files'));
@@ -43,10 +44,11 @@ let recipeSchema = new Schema({
   }
 });
 
+const esClient = new elasticsearch.Client({
+  host: 'localhost:9200'
+});
 recipeSchema.plugin(mongoosastic, {
-  hosts: [
-    'localhost:9200'
-  ]
+  esClient: esClient
 });
 
 let Recipe = mongoose.model("Recipes", recipeSchema),
@@ -62,6 +64,51 @@ stream.on('close', function () {
 stream.on('error', function (err) {
   console.log(err);
 });
+
+// Recipe.createMapping(
+//   {
+//     "settings": {
+//       "number_of_shards": 1,
+//       "analysis": {
+//         "filter": {
+//           "autocomplete_filter": {
+//             "type": "edge_ngram",
+//             "min_gram": 3,
+//             "max_gram": 20
+//           }
+//         },
+//         "analyzer": {
+//           "autocomplete": {
+//             "type": "custom",
+//             "tokenizer": "standard",
+//             "filter": [
+//               "lowercase",
+//               "autocomplete_filter"
+//             ]
+//           }
+//         }
+//       },
+//     },
+//     "mapping": {
+//       "recipes": {
+//         "properties": {
+//           "name": {
+//             "type": "text",
+//             "analyzer": "autocomplete",
+//             "search_analyzer": "standard"
+//           },
+//         }
+//       }
+//     }
+//   }, function (err, mapping) {
+//     if (err) {
+//       console.log('error creating mapping (you can safely ignore this)');
+//       console.log(err);
+//     } else {
+//       console.log('mapping created!');
+//       console.log(mapping);
+//     }
+//   });
 
 app.get("/syncData", function (req, res) {
   let stream = Recipe.synchronize()
@@ -84,9 +131,50 @@ app.get("/search/:term", function (req, res) {
   let list = [];
   Recipe.esSearch(
     {
-  query : {
-    query_string: {fields: ["name"], query: `*${val}*`}
-  }, size: 30
+      "query": {
+        "bool":
+          {
+            "must": {
+              "query_string": {
+                "query": `*${val}*`,
+                "default_field": "name",
+              }
+            },
+            "should": [
+              {
+                "span_first": {
+                  "match": {
+                    "span_term": {
+                      "name": {"value": `${val}`}
+                    }
+                  },
+                  "end": 1
+                }
+              },
+              {
+                "span_first": {
+                  "match": {
+                    "span_term": {
+                      "name": {"value": `${val}`}
+                    }
+                  },
+                  "end": 2
+                }
+              },
+              {
+                "span_first": {
+                  "match": {
+                    "span_term": {
+                      "name": {"value": `${val}`}
+                    }
+                  },
+                  "end": 3
+                }
+              }
+            ]
+          }
+      },
+      "size": 100
     }, {hydrate: false}, function (err, results) {
       results.hits.hits.map((each) => {
         list.push(each._source.name);
@@ -111,19 +199,53 @@ app.get("/filter/:term", function (req, res) {
   let list = [];
   Recipe.esSearch(
     {
-      query : {
-        bool: {
-          must: [
-            {
-              query_string: {
-                query: `name:*${val}*`
+      "query": {
+        "bool":
+          {
+            "must": {
+              "query_string": {
+                "query": `*${val}*`,
+                "default_field": "name",
               }
-            }
-          ],
-          filter: filter,
-        },
+            },
+            "should": [
+              {
+                "span_first": {
+                  "match": {
+                    "span_term": {
+                      "name": {"value": `${val}`}
+                    }
+                  },
+                  "end": 1
+                }
+              },
+              {
+                "span_first": {
+                  "match": {
+                    "span_term": {
+                      "name": {"value": `${val}`}
+                    }
+                  },
+                  "end": 2
+                }
+              },
+              {
+                "span_first": {
+                  "match": {
+                    "span_term": {
+                      "name": {"value": `${val}`}
+                    }
+                  },
+                  "end": 3
+                }
+              }
+            ],
+            filter: [
+              {terms: {ingredients : options}},
+            ]
+          }
       },
-      size: 100
+      "size": 100
     }, {hydrate: false}, function (err, results) {
       results.hits.hits.map((each) => {
         list.push(each._source.name);
