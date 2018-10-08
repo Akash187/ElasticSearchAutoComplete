@@ -144,8 +144,6 @@
       }
       console.log('make ajax request to:', requestURL);
 
-      //it will show results once the character entered is 4 or more.
-      if (searchTerm.length > 0) {
         //trying to kill previous ajax request
         if (xhr != null) {
           xhr.abort();
@@ -167,7 +165,6 @@
             })
           }
         });
-      }
     }
 
   }
@@ -196,9 +193,9 @@
           success: (result) => {
 
             //uncomment below line to start autocomplete
-            let sortedArray = sortInputFirst(document.getElementById("myInput"), result);
-            autocomplete(document.getElementById("myInput"), sortedArray);
+            //autocomplete(document.getElementById("myInput"), result);
 
+            console.log(result);
             result.map((each) => {
               $('#list').append(`<li>${each}</li>`);
             })
@@ -207,21 +204,6 @@
       }
     });
   });
-
-  function sortInputFirst(input, data) {
-    let first = [];
-    let others = [];
-    for (let i = 0; i < data.length; i++) {
-      if (data[i].indexOf(input) === 0) {
-        first.push(data[i]);
-      } else {
-        others.push(data[i]);
-      }
-    }
-    first.sort();
-    others.sort();
-    return(first.concat(others));
-  }
 
   function autocomplete(inp, arr) {
     /*the autocomplete function takes two arguments,

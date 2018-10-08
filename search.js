@@ -138,6 +138,7 @@ app.get("/search/:term", function (req, res) {
               "query_string": {
                 "query": `*${val}*`,
                 "default_field": "name",
+                "fuzziness": 1
               }
             },
             "should": [
@@ -176,11 +177,65 @@ app.get("/search/:term", function (req, res) {
       },
       "size": 100
     }, {hydrate: false}, function (err, results) {
+
       results.hits.hits.map((each) => {
         list.push(each._source.name);
       });
       console.log(results.hits.total);
-      res.send(list);
+      Recipe.esSearch(
+        {
+          "query": {
+            "bool":
+              {
+                "must": {
+                  "query_string": {
+                    "query": `${val}~`,
+                    "default_field": "name",
+                    "fuzziness": 1
+                  }
+                },
+                "should": [
+                  {
+                    "span_first": {
+                      "match": {
+                        "span_term": {
+                          "name": {"value": `${val}`}
+                        }
+                      },
+                      "end": 1
+                    }
+                  },
+                  {
+                    "span_first": {
+                      "match": {
+                        "span_term": {
+                          "name": {"value": `${val}`}
+                        }
+                      },
+                      "end": 2
+                    }
+                  },
+                  {
+                    "span_first": {
+                      "match": {
+                        "span_term": {
+                          "name": {"value": `${val}`}
+                        }
+                      },
+                      "end": 3
+                    }
+                  }
+                ]
+              }
+          },
+          "size": 100
+        }, {hydrate: false}, function (err, results) {
+          results.hits.hits.map((each) => {
+            list.push(each._source.name);
+          });
+          console.log("Fuzzy hits: " + results.hits.total);
+          res.send(list);
+        });
     });
 });
 
@@ -206,6 +261,7 @@ app.get("/filter/:term", function (req, res) {
               "query_string": {
                 "query": `*${val}*`,
                 "default_field": "name",
+                "fuzziness": 1
               }
             },
             "should": [
@@ -247,12 +303,126 @@ app.get("/filter/:term", function (req, res) {
       },
       "size": 100
     }, {hydrate: false}, function (err, results) {
+
       results.hits.hits.map((each) => {
         list.push(each._source.name);
       });
       console.log(results.hits.total);
-      res.send(list);
+      Recipe.esSearch(
+        {
+          "query": {
+            "bool":
+              {
+                "must": {
+                  "query_string": {
+                    "query": `${val}~`,
+                    "default_field": "name",
+                    "fuzziness": 1
+                  }
+                },
+                "should": [
+                  {
+                    "span_first": {
+                      "match": {
+                        "span_term": {
+                          "name": {"value": `${val}`}
+                        }
+                      },
+                      "end": 1
+                    }
+                  },
+                  {
+                    "span_first": {
+                      "match": {
+                        "span_term": {
+                          "name": {"value": `${val}`}
+                        }
+                      },
+                      "end": 2
+                    }
+                  },
+                  {
+                    "span_first": {
+                      "match": {
+                        "span_term": {
+                          "name": {"value": `${val}`}
+                        }
+                      },
+                      "end": 3
+                    }
+                  }
+                ],
+                filter: [
+                  {terms: {ingredients : options}},
+                ]
+              }
+          },
+          "size": 100
+        }, {hydrate: false}, function (err, results) {
+          results.hits.hits.map((each) => {
+            list.push(each._source.name);
+          });
+          console.log("Fuzzy hits: " + results.hits.total);
+          res.send(list);
+        });
     });
+
+  // Recipe.esSearch(
+  //   {
+  //     "query": {
+  //       "bool":
+  //         {
+  //           "must": {
+  //             "query_string": {
+  //               "query": `*${val}*`,
+  //               "default_field": "name",
+  //             }
+  //           },
+  //           "should": [
+  //             {
+  //               "span_first": {
+  //                 "match": {
+  //                   "span_term": {
+  //                     "name": {"value": `${val}`}
+  //                   }
+  //                 },
+  //                 "end": 1
+  //               }
+  //             },
+  //             {
+  //               "span_first": {
+  //                 "match": {
+  //                   "span_term": {
+  //                     "name": {"value": `${val}`}
+  //                   }
+  //                 },
+  //                 "end": 2
+  //               }
+  //             },
+  //             {
+  //               "span_first": {
+  //                 "match": {
+  //                   "span_term": {
+  //                     "name": {"value": `${val}`}
+  //                   }
+  //                 },
+  //                 "end": 3
+  //               }
+  //             }
+  //           ],
+  //           filter: [
+  //             {terms: {ingredients : options}},
+  //           ]
+  //         }
+  //     },
+  //     "size": 100
+  //   }, {hydrate: false}, function (err, results) {
+  //     results.hits.hits.map((each) => {
+  //       list.push(each._source.name);
+  //     });
+  //     console.log(results.hits.total);
+  //     res.send(list);
+  //   });
 });
 
 app.listen(3000, () => {
