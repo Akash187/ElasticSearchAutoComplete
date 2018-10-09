@@ -65,51 +65,6 @@ stream.on('error', function (err) {
   console.log(err);
 });
 
-// Recipe.createMapping(
-//   {
-//     "settings": {
-//       "number_of_shards": 1,
-//       "analysis": {
-//         "filter": {
-//           "autocomplete_filter": {
-//             "type": "edge_ngram",
-//             "min_gram": 3,
-//             "max_gram": 20
-//           }
-//         },
-//         "analyzer": {
-//           "autocomplete": {
-//             "type": "custom",
-//             "tokenizer": "standard",
-//             "filter": [
-//               "lowercase",
-//               "autocomplete_filter"
-//             ]
-//           }
-//         }
-//       },
-//     },
-//     "mapping": {
-//       "recipes": {
-//         "properties": {
-//           "name": {
-//             "type": "text",
-//             "analyzer": "autocomplete",
-//             "search_analyzer": "standard"
-//           },
-//         }
-//       }
-//     }
-//   }, function (err, mapping) {
-//     if (err) {
-//       console.log('error creating mapping (you can safely ignore this)');
-//       console.log(err);
-//     } else {
-//       console.log('mapping created!');
-//       console.log(mapping);
-//     }
-//   });
-
 app.get("/syncData", function (req, res) {
   let stream = Recipe.synchronize()
     , count = 0;
@@ -126,110 +81,72 @@ app.get("/syncData", function (req, res) {
   res.send({result: "successfully indexed Mongo Data to ElasticSearch."});
 });
 
+function queryObject(val,partialQueryString,fuzzyQueryString, filter = []){
+  // console.log(partialQueryString);
+  // console.log(fuzzyQueryString);
+  let queryString = (partialQueryString) ? partialQueryString : fuzzyQueryString;
+  // console.log("queryString", queryString);
+  return {
+    "query": {
+      "bool":
+        {
+          "must": {
+            "query_string": {
+              "query": `${queryString}`,
+              "default_field": "name",
+              "fuzziness": 1
+            }
+          },
+          "should": [
+            {
+              "span_first": {
+                "match": {
+                  "span_term": {
+                    "name": {"value": `${val}`}
+                  }
+                },
+                "end": 1
+              }
+            },
+            {
+              "span_first": {
+                "match": {
+                  "span_term": {
+                    "name": {"value": `${val}`}
+                  }
+                },
+                "end": 2
+              }
+            },
+            {
+              "span_first": {
+                "match": {
+                  "span_term": {
+                    "name": {"value": `${val}`}
+                  }
+                },
+                "end": 3
+              }
+            }
+          ],
+          filter: filter
+        }
+    },
+    "size": 100
+  }
+}
+
 app.get("/search/:term", function (req, res) {
   let val = req.params.term;
   let list = [];
   Recipe.esSearch(
-    {
-      "query": {
-        "bool":
-          {
-            "must": {
-              "query_string": {
-                "query": `*${val}*`,
-                "default_field": "name",
-                "fuzziness": 1
-              }
-            },
-            "should": [
-              {
-                "span_first": {
-                  "match": {
-                    "span_term": {
-                      "name": {"value": `${val}`}
-                    }
-                  },
-                  "end": 1
-                }
-              },
-              {
-                "span_first": {
-                  "match": {
-                    "span_term": {
-                      "name": {"value": `${val}`}
-                    }
-                  },
-                  "end": 2
-                }
-              },
-              {
-                "span_first": {
-                  "match": {
-                    "span_term": {
-                      "name": {"value": `${val}`}
-                    }
-                  },
-                  "end": 3
-                }
-              }
-            ]
-          }
-      },
-      "size": 100
-    }, {hydrate: false}, function (err, results) {
-
+    queryObject(val,`*${val}*`), {hydrate: false}, function (err, results) {
       results.hits.hits.map((each) => {
         list.push(each._source.name);
       });
       console.log(results.hits.total);
       Recipe.esSearch(
-        {
-          "query": {
-            "bool":
-              {
-                "must": {
-                  "query_string": {
-                    "query": `${val}~`,
-                    "default_field": "name",
-                    "fuzziness": 1
-                  }
-                },
-                "should": [
-                  {
-                    "span_first": {
-                      "match": {
-                        "span_term": {
-                          "name": {"value": `${val}`}
-                        }
-                      },
-                      "end": 1
-                    }
-                  },
-                  {
-                    "span_first": {
-                      "match": {
-                        "span_term": {
-                          "name": {"value": `${val}`}
-                        }
-                      },
-                      "end": 2
-                    }
-                  },
-                  {
-                    "span_first": {
-                      "match": {
-                        "span_term": {
-                          "name": {"value": `${val}`}
-                        }
-                      },
-                      "end": 3
-                    }
-                  }
-                ]
-              }
-          },
-          "size": 100
-        }, {hydrate: false}, function (err, results) {
+        queryObject(val,undefined,`${val}~`), {hydrate: false}, function (err, results) {
           results.hits.hits.map((each) => {
             list.push(each._source.name);
           });
@@ -253,112 +170,19 @@ app.get("/filter/:term", function (req, res) {
   });
   let list = [];
   Recipe.esSearch(
-    {
-      "query": {
-        "bool":
-          {
-            "must": {
-              "query_string": {
-                "query": `*${val}*`,
-                "default_field": "name",
-                "fuzziness": 1
-              }
-            },
-            "should": [
-              {
-                "span_first": {
-                  "match": {
-                    "span_term": {
-                      "name": {"value": `${val}`}
-                    }
-                  },
-                  "end": 1
-                }
-              },
-              {
-                "span_first": {
-                  "match": {
-                    "span_term": {
-                      "name": {"value": `${val}`}
-                    }
-                  },
-                  "end": 2
-                }
-              },
-              {
-                "span_first": {
-                  "match": {
-                    "span_term": {
-                      "name": {"value": `${val}`}
-                    }
-                  },
-                  "end": 3
-                }
-              }
-            ],
-            filter: [
-              {terms: {ingredients : options}},
-            ]
-          }
-      },
-      "size": 100
-    }, {hydrate: false}, function (err, results) {
-
+    queryObject(val,`*${val}*`,undefined,[
+      {terms: {ingredients : options}},
+    ]),
+    {hydrate: false},
+    function (err, results) {
       results.hits.hits.map((each) => {
         list.push(each._source.name);
       });
       console.log(results.hits.total);
       Recipe.esSearch(
-        {
-          "query": {
-            "bool":
-              {
-                "must": {
-                  "query_string": {
-                    "query": `${val}~`,
-                    "default_field": "name",
-                    "fuzziness": 1
-                  }
-                },
-                "should": [
-                  {
-                    "span_first": {
-                      "match": {
-                        "span_term": {
-                          "name": {"value": `${val}`}
-                        }
-                      },
-                      "end": 1
-                    }
-                  },
-                  {
-                    "span_first": {
-                      "match": {
-                        "span_term": {
-                          "name": {"value": `${val}`}
-                        }
-                      },
-                      "end": 2
-                    }
-                  },
-                  {
-                    "span_first": {
-                      "match": {
-                        "span_term": {
-                          "name": {"value": `${val}`}
-                        }
-                      },
-                      "end": 3
-                    }
-                  }
-                ],
-                filter: [
-                  {terms: {ingredients : options}},
-                ]
-              }
-          },
-          "size": 100
-        }, {hydrate: false}, function (err, results) {
+        queryObject(val,undefined,`${val}~`,[
+          {terms: {ingredients : options}},
+        ]), {hydrate: false}, function (err, results) {
           results.hits.hits.map((each) => {
             list.push(each._source.name);
           });
@@ -366,63 +190,6 @@ app.get("/filter/:term", function (req, res) {
           res.send(list);
         });
     });
-
-  // Recipe.esSearch(
-  //   {
-  //     "query": {
-  //       "bool":
-  //         {
-  //           "must": {
-  //             "query_string": {
-  //               "query": `*${val}*`,
-  //               "default_field": "name",
-  //             }
-  //           },
-  //           "should": [
-  //             {
-  //               "span_first": {
-  //                 "match": {
-  //                   "span_term": {
-  //                     "name": {"value": `${val}`}
-  //                   }
-  //                 },
-  //                 "end": 1
-  //               }
-  //             },
-  //             {
-  //               "span_first": {
-  //                 "match": {
-  //                   "span_term": {
-  //                     "name": {"value": `${val}`}
-  //                   }
-  //                 },
-  //                 "end": 2
-  //               }
-  //             },
-  //             {
-  //               "span_first": {
-  //                 "match": {
-  //                   "span_term": {
-  //                     "name": {"value": `${val}`}
-  //                   }
-  //                 },
-  //                 "end": 3
-  //               }
-  //             }
-  //           ],
-  //           filter: [
-  //             {terms: {ingredients : options}},
-  //           ]
-  //         }
-  //     },
-  //     "size": 100
-  //   }, {hydrate: false}, function (err, results) {
-  //     results.hits.hits.map((each) => {
-  //       list.push(each._source.name);
-  //     });
-  //     console.log(results.hits.total);
-  //     res.send(list);
-  //   });
 });
 
 app.listen(3000, () => {
