@@ -14,7 +14,7 @@
     "express": "^4.16.3",
     "mongodb": "^3.1.6",
     "mongoosastic": "^4.4.1",
-    "mongoose": "^5.2.15",
+    "mongoose": "^5.7.5",
     "request": "^2.88.0"
   },
   "devDependencies": {
